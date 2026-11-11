@@ -67,7 +67,8 @@ def load_ai_models():
         df['recent_form_diff'] * 2.0 + 
         df['corner_avg'] * 0.15 + 
         df['market_line'] * 0.25 + 
-        (df['bet365_odds'] - df['sportlottery_odds']) * 1.0
+        (df['bet365_odds'] - df['sportlottery_odds']) * 6.0
+
     )
     # 增加隨機擾動，避免每次都偏向同一個方向
     df['target'] = (score + np.random.normal(0, 1.5, n_samples) > 0).astype(int)

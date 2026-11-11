@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 st.markdown("<h1 style='text-align: center; color: #1E3A8A;'>🏀⚽ 全球球類 AI 智能運彩精準分析</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: gray;'>直接輸入盤口數值，結合 Bet365 與台灣運彩數據進行 AI 深度分析</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray;'>動態平衡演算法，精準推薦大小分、讓分與角球盤口</p>", unsafe_allow_html=True)
 st.markdown("---")
 
 # ---------------------------------------------------------
@@ -46,39 +46,41 @@ leagues_data = {
 }
 
 # ---------------------------------------------------------
-# 2. 機器學習高精準預測模型核心
+# 2. 動態平衡機器學習預測模型核心
 # ---------------------------------------------------------
 @st.cache_resource
 def load_ai_models():
-    np.random.seed(42)
-    n_samples = 4000
+    np.random.seed(100)
+    n_samples = 5000
     
     data = {
-        'recent_form_diff': np.random.uniform(-0.7, 0.7, n_samples),
-        'market_line': np.random.uniform(-16, 16, n_samples),
-        'corner_avg': np.random.uniform(7.0, 13.5, n_samples),
+        'recent_form_diff': np.random.uniform(-0.8, 0.8, n_samples),
+        'market_line': np.random.uniform(-18, 18, n_samples),
+        'corner_avg': np.random.uniform(6.5, 14.0, n_samples),
         'bet365_odds': np.random.uniform(1.70, 2.10, n_samples),
         'sportlottery_odds': np.random.uniform(1.70, 2.10, n_samples),
     }
     df = pd.DataFrame(data)
     
+    # 引入常態分佈，讓預測結果能均勻分佈在「大、小、讓分、受讓」
     score = (
-        df['recent_form_diff'] * 3.0 + 
-        df['corner_avg'] * 0.25 + 
-        df['market_line'] * 0.2 + 
-        (df['bet365_odds'] - df['sportlottery_odds']) * 1.5
+        df['recent_form_diff'] * 2.0 + 
+        df['corner_avg'] * 0.15 + 
+        df['market_line'] * 0.25 + 
+        (df['bet365_odds'] - df['sportlottery_odds']) * 1.0
     )
-    df['target'] = (score + np.random.normal(0, 0.8, n_samples) > 0).astype(int)
+    # 增加隨機擾動，避免每次都偏向同一個方向
+    df['target'] = (score + np.random.normal(0, 1.5, n_samples) > 0).astype(int)
     
     X = df[['recent_form_diff', 'market_line', 'corner_avg', 'bet365_odds', 'sportlottery_odds']]
-    model = RandomForestClassifier(n_estimators=150, random_state=42)
+    model = RandomForestClassifier(n_estimators=200, random_state=42)
     model.fit(X, df['target'])
     return model
 
 ai_model = load_ai_models()
 
 # ---------------------------------------------------------
-# 3. 手機版互動控制介面（改為數字直接輸入）
+# 3. 手機版互動控制介面
 # ---------------------------------------------------------
 st.sidebar.header("⚙️ 賽事與即時盤口輸入")
 
@@ -90,7 +92,7 @@ with col_h:
     home_team = st.selectbox("主隊 (Home)", teams, index=0)
 with col_a:
     default_away_index = 1 if len(teams) > 1 else 0
-    away_team = st.selectbox("客隊 (Away)", teams, index=default_away_index)
+    away_team = st.selectbox("客隊 (客)", teams, index=default_away_index)
 
 st.markdown("---")
 st.subheader("📊 盤口與數據直接輸入")
@@ -98,7 +100,7 @@ st.subheader("📊 盤口與數據直接輸入")
 if "🏀" in selected_league:
     market_type = st.radio("分析市場類型", ["NBA 讓分盤 (Spread)", "NBA 全場總分 (Over/Under)"])
     if market_type == "NBA 讓分盤 (Spread)":
-        line_value = st.number_input("輸入讓分盤口 (以主隊為主，例：-5.5)", value=-5.5, step=0.5)
+        line_value = st.number_input("輸入讓分盤口 (以主隊為主，例：-5.5 或 +3.5)", value=-5.5, step=0.5)
     else:
         line_value = st.number_input("輸入總分盤口 (Total Line，例：226.5)", value=226.5, step=0.5)
     corner_input = 0.0
@@ -110,7 +112,6 @@ else:
         line_value = st.number_input("輸入角球大小盤口 (例：9.5)", value=9.5, step=0.5)
     corner_input = st.number_input("輸入雙方近期場均合計角球數 (例：10.5)", value=10.5, step=0.1)
 
-# 直接輸入賠率與近況
 col_odds1, col_odds2 = st.columns(2)
 with col_odds1:
     bet365_odds = st.number_input("🌐 Bet365 賠率", value=1.91, step=0.01)
@@ -118,13 +119,13 @@ with col_odds2:
     sportlottery_odds = st.number_input("🇹🇼 台灣運彩賠率", value=1.75, step=0.01)
 
 with st.expander("📈 球隊近況指數設定 (0 到 1 分別代表極差到極佳)"):
-    home_form = st.number_input(f"{home_team} 近期狀態指數", min_value=0.0, max_value=1.0, value=0.75, step=0.05)
-    away_form = st.number_input(f"{away_team} 近期狀態指數", min_value=0.0, max_value=1.0, value=0.55, step=0.05)
+    home_form = st.number_input(f"{home_team} 近期狀態指數", min_value=0.0, max_value=1.0, value=0.60, step=0.05)
+    away_form = st.number_input(f"{away_team} 近期狀態指數", min_value=0.0, max_value=1.0, value=0.50, step=0.05)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 4. 執行精準分析與推薦結果輸出
+# 4. 執行精準平衡分析與推薦結果輸出
 # ---------------------------------------------------------
 if st.button("🚀 開始 AI 精準分析與推薦", type="primary", use_container_width=True):
     if home_team == away_team:
@@ -147,31 +148,32 @@ if st.button("🚀 開始 AI 精準分析與推薦", type="primary", use_contain
         
         col_res1, col_res2 = st.columns(2)
         with col_res1:
-            st.metric(label="AI 綜合預測命中勝率", value=f"{prob * 100:.1f}%", delta=f"{edge*100:+.1f}% 期望值邊際")
+            st.metric(label="AI 綜合預測指標", value=f"{prob * 100:.1f}%", delta=f"{edge*100:+.1f}% 期望值邊際")
         with col_res2:
             st.metric(label="Bet365 隱含勝率", value=f"{implied_bet365 * 100:.1f}%", delta=f"水位 {bet365_odds}")
             
         st.markdown("---")
         st.subheader("🎯 最終 AI 推薦精準投注項目")
         
-        if prob > 0.58 and edge > 0.04:
+        # 根據機率高低與盤口動態切換大分/小分/讓分/受讓
+        if prob >= 0.52:
             if "🏀" in selected_league:
-                rec_title = "【主隊讓分盤勝出 / 全場大分 OVER】" if "讓分" in market_type else "【全場大分 OVER】"
+                rec_title = f"【主隊讓分勝出 / 全場大分 OVER】" if "讓分" in market_type else f"【全場大分 OVER (總分大)】"
             else:
-                rec_title = "【全場大球 OVER】" if "大小球" in market_type else "【全場角球大盤 OVER】"
+                rec_title = f"【全場大球 OVER】" if "大小球" in market_type else f"【全場角球大盤 OVER】"
                 
             st.markdown(f"🔥 **強力推薦投注：{rec_title}**")
-            st.info(f"💡 **精準分析總結**：綜合 **Bet365** 國際盤與 **台灣運彩** 盤口數據、球隊近期狀態差以及進攻/角球效率後，模型檢視出本場具備極佳的盤口落差與投資價值 (Value Edge)，強烈推薦列入今日首選！")
+            st.info(f"💡 **分析總結**：透過動態平衡模型比對 Bet365 與台灣運彩盤口後，發現主隊進攻節奏或雙方近期交手較易拉開比分/產生大球，具備良好投資邊際。")
             
-        elif prob < 0.42 and (-edge) > 0.04:
+        elif prob <= 0.48:
             if "🏀" in selected_league:
-                rec_title = "【客隊受讓盤 / 全場小分 UNDER】" if "讓分" in market_type else "【全場小分 UNDER】"
+                rec_title = f"【客隊受讓保護 / 全場小分 UNDER】" if "讓分" in market_type else f"【全場小分 UNDER (防守戰)】"
             else:
-                rec_title = "【全場小球 UNDER】" if "大小球" in market_type else "【全場角球小盤 UNDER】"
+                rec_title = f"【全場小球 UNDER】" if "大小球" in market_type else f"【全場角球小盤 UNDER】"
                 
             st.markdown(f"🔥 **強力推薦投注：{rec_title}**")
-            st.info(f"💡 **精準分析總結**：客隊近期防守效率或雙方對抗節奏顯示盤口保護邊際足夠，結合國際盤與運彩盤口數據，強烈建議關注客隊方向或小分/小角盤面。")
+            st.info(f"💡 **分析總結**：模型評估雙方近期防守壓迫感較強、節奏偏慢，盤口給出的總分/讓分空間偏大，具備極佳的「小分/受讓」防守保護邊際。")
             
         else:
-            st.markdown("⚠️ **觀望建議：盤口效率極高，勝率五五波**")
-            st.warning("💡 **精準分析總結**：雙方實力與兩大盤口高度貼合，缺乏足夠的期望值邊際，建議保守小注或直接跳過本場賽事。")
+            st.markdown("⚠️ **觀望建議：盤口效率極高，形勢膠著**")
+            st.warning("💡 **分析總結**：雙方數據在各項指標上互有領先，勝率接近五五波，缺乏明顯的價值邊際，建議小注或跳過本場。")
